@@ -1,13 +1,12 @@
+use super::ed25519_verify;
 use bignum::{bignum::BigNum, ED25519_Fq as Fq};
 use edwards_bignum::ed25519::Ed25519;
-use edwards_bignum::ScalarField;
-use super::ed25519_verify;
 
 // Test vectors from RFC 8032 Section 7.1 (Ed25519). The public keys and
 // signature R points are given in the RFC in compressed (32-byte) form; they
-// have been decompressed here into affine (x, y) coordinates over Fq, and the
-// signature scalar s is the little-endian integer from the signature's second
-// half.
+// have been decompressed here into affine (x, y) coordinates over Fq. The
+// signature scalar S is passed in its wire form: the little-endian bytes of
+// the signature's second half.
 
 #[test]
 // RFC 8032 7.1 TEST 1 (empty message)
@@ -22,12 +21,14 @@ fn test_rfc8032_test1() {
         Fq::from_limbs([0x324bd01ce6f3cf81ab44e62959c82a, 0xe309d40065fcc338b3127f46837182, 0x6218]),
         Fq::from_limbs([0x826e80cce2869072ac60c3004356e5, 0x492265e073d874d9e5b81e7f87848a, 0x5501]),
     ));
-    let sig_scalar = ScalarField::<64>::from(
-        5004556735901913393272427758925840403246877222315506387332009764265656498271,
-    );
+    // S = 5004556735901913393272427758925840403246877222315506387332009764265656498271
+    let sig_s_bytes: [u8; 32] = [
+        95, 184, 130, 21, 144, 163, 59, 172, 198, 30, 57, 112, 28, 249, 180, 107, 210, 91, 245, 240,
+        89, 91, 190, 36, 101, 81, 65, 67, 142, 122, 16, 11,
+    ];
 
     let message: BoundedVec<u8, 1> = BoundedVec::new();
-    assert(ed25519_verify(pubkey, sig_scalar, sig_point, message));
+    assert(ed25519_verify(pubkey, sig_s_bytes, sig_point, message));
 }
 
 #[test]
@@ -45,13 +46,15 @@ fn test_rfc8032_test2() {
         ),
         Fq::from_limbs([0x25645f0b820e72b8cad4f0a909a092, 0xdbeb232276b38f3f5016547bb2a240, 0x5a69]),
     ));
-    let sig_scalar = ScalarField::<64>::from(
-        22493278956989295319831480986006851106061907369804654499116800046813764104,
-    );
+    // S = 22493278956989295319831480986006851106061907369804654499116800046813764104
+    let sig_s_bytes: [u8; 32] = [
+        8, 90, 193, 228, 62, 21, 153, 110, 69, 143, 54, 19, 208, 241, 29, 140, 56, 123, 46, 174,
+        180, 48, 42, 238, 176, 13, 41, 22, 18, 187, 12, 0,
+    ];
 
     let mut message: BoundedVec<u8, 1> = BoundedVec::new();
     message.extend_from_array([0x72]);
-    assert(ed25519_verify(pubkey, sig_scalar, sig_point, message));
+    assert(ed25519_verify(pubkey, sig_s_bytes, sig_point, message));
 }
 
 #[test]
@@ -69,13 +72,15 @@ fn test_rfc8032_test3() {
             [0x1be3a9ce627480224ecde57d69162, 0x5adbd780365e443a7484a248e50ca3, 0x2cc3],
         ),
     ));
-    let sig_scalar = ScalarField::<64>::from(
-        4869643893319708471955165214975585939793846505679808910535986866633137979160,
-    );
+    // S = 4869643893319708471955165214975585939793846505679808910535986866633137979160
+    let sig_s_bytes: [u8; 32] = [
+        24, 255, 155, 83, 141, 22, 242, 144, 174, 103, 247, 96, 152, 77, 198, 89, 74, 124, 21, 233,
+        113, 110, 210, 141, 192, 39, 190, 206, 234, 30, 196, 10,
+    ];
 
     let mut message: BoundedVec<u8, 2> = BoundedVec::new();
     message.extend_from_array([0xaf, 0x82]);
-    assert(ed25519_verify(pubkey, sig_scalar, sig_point, message));
+    assert(ed25519_verify(pubkey, sig_s_bytes, sig_point, message));
 }
 
 #[test]
@@ -89,9 +94,11 @@ fn test_rfc8032_test1024() {
         Fq::from_limbs([0xbd558b050aa85ab8ad2675cc88a94c, 0x4fd5200e3f5f4599574d4b3e1bddc0, 0x2e34]),
         Fq::from_limbs([0x6a326346df7c4de2b30105904cab0a, 0xfe60e4f6cb67dbcbb243485edf873a, 0x50c3]),
     ));
-    let sig_scalar = ScalarField::<64>::from(
-        1600931089502092863442352147076591062621339170613179359539649259384773628842,
-    );
+    // S = 1600931089502092863442352147076591062621339170613179359539649259384773628842
+    let sig_s_bytes: [u8; 32] = [
+        170, 83, 113, 177, 80, 143, 159, 69, 40, 236, 234, 35, 196, 54, 217, 75, 94, 143, 205, 79,
+        104, 30, 48, 166, 172, 0, 169, 112, 74, 24, 138, 3,
+    ];
 
     let mut message: BoundedVec<u8, 1023> = BoundedVec::new();
     message.extend_from_array([
@@ -165,7 +172,7 @@ fn test_rfc8032_test1024() {
         0xa3, 0xb8, 0xca, 0xc6, 0x0c, 0x90, 0x5c, 0x15, 0xfc, 0x91, 0x08, 0x40, 0xb9, 0x4c, 0x00,
         0xa0, 0xb9, 0xd0,
     ]);
-    assert(ed25519_verify(pubkey, sig_scalar, sig_point, message));
+    assert(ed25519_verify(pubkey, sig_s_bytes, sig_point, message));
 }
 
 #[test]
@@ -183,9 +190,11 @@ fn test_rfc8032_test_sha_abc() {
             [0x9a8377f21b2ba5339636e759442adc, 0x266c18a2be69cb3ebfefa309102000, 0x9b5],
         ),
     ));
-    let sig_scalar = ScalarField::<64>::from(
-        2104656142637546237807740442104250455179506353644270864111513552925382096137,
-    );
+    // S = 2104656142637546237807740442104250455179506353644270864111513552925382096137
+    let sig_s_bytes: [u8; 32] = [
+        9, 53, 31, 201, 172, 144, 179, 236, 253, 251, 199, 198, 100, 49, 224, 48, 61, 202, 23, 156,
+        19, 138, 193, 122, 217, 190, 241, 23, 115, 49, 167, 4,
+    ];
 
     let mut message: BoundedVec<u8, 64> = BoundedVec::new();
     message.extend_from_array([
@@ -195,7 +204,7 @@ fn test_rfc8032_test_sha_abc() {
         0xfe, 0xeb, 0xbd, 0x45, 0x4d, 0x44, 0x23, 0x64, 0x3c, 0xe8, 0x0e, 0x2a, 0x9a, 0xc9, 0x4f,
         0xa5, 0x4c, 0xa4, 0x9f,
     ]);
-    assert(ed25519_verify(pubkey, sig_scalar, sig_point, message));
+    assert(ed25519_verify(pubkey, sig_s_bytes, sig_point, message));
 }
 
 #[test]
@@ -213,11 +222,206 @@ fn test_rfc8032_test2_tampered_message_rejected() {
         ),
         Fq::from_limbs([0x25645f0b820e72b8cad4f0a909a092, 0xdbeb232276b38f3f5016547bb2a240, 0x5a69]),
     ));
-    let sig_scalar = ScalarField::<64>::from(
-        22493278956989295319831480986006851106061907369804654499116800046813764104,
-    );
+    // S = 22493278956989295319831480986006851106061907369804654499116800046813764104
+    let sig_s_bytes: [u8; 32] = [
+        8, 90, 193, 228, 62, 21, 153, 110, 69, 143, 54, 19, 208, 241, 29, 140, 56, 123, 46, 174,
+        180, 48, 42, 238, 176, 13, 41, 22, 18, 187, 12, 0,
+    ];
 
     let mut bad_message: BoundedVec<u8, 1> = BoundedVec::new();
     bad_message.push(0x73);
-    assert(!ed25519_verify(pubkey, sig_scalar, sig_point, bad_message));
+    assert(!ed25519_verify(pubkey, sig_s_bytes, sig_point, bad_message));
+}
+
+#[test]
+// RFC 8032 7.1 TEST 1 with S + L in place of S must be rejected.
+fn test_rfc8032_test1_scalar_plus_order_rejected() {
+    let pubkey = Ed25519::from((
+        Fq::from_limbs([0x13d47253187c24b12786bd777645ce, 0xe09a2b9d34292297e08d60d0f620c5, 0x55d0]),
+        Fq::from_limbs(
+            [0x764c9d3fe4bd5b70ab18201985ad7, 0x7f7681a02af2523a6daf372e10e3a, 0x1a51],
+        ),
+    ));
+    let sig_point = Ed25519::from((
+        Fq::from_limbs([0x324bd01ce6f3cf81ab44e62959c82a, 0xe309d40065fcc338b3127f46837182, 0x6218]),
+        Fq::from_limbs([0x826e80cce2869072ac60c3004356e5, 0x492265e073d874d9e5b81e7f87848a, 0x5501]),
+    ));
+    // S + L = 12241562313234175607245614321968834644103993581695413993333960702551110749260
+    let sig_s_bytes: [u8; 32] = [
+        76, 140, 120, 114, 170, 6, 78, 4, 157, 187, 48, 19, 251, 242, 147, 128, 210, 91, 245, 240,
+        89, 91, 190, 36, 101, 81, 65, 67, 142, 122, 16, 27,
+    ];
+
+    let message: BoundedVec<u8, 1> = BoundedVec::new();
+    assert(!ed25519_verify(pubkey, sig_s_bytes, sig_point, message));
+}
+
+#[test]
+// RFC 8032 7.1 TEST 1 with the encoding of S + p in place of S, where p is the
+// BN254 field modulus: the same value mod p but a different integer, so a
+// mod-p range check alone would accept it as a second encoding of S.
+fn test_rfc8032_test1_scalar_plus_bn254_modulus_rejected() {
+    let pubkey = Ed25519::from((
+        Fq::from_limbs([0x13d47253187c24b12786bd777645ce, 0xe09a2b9d34292297e08d60d0f620c5, 0x55d0]),
+        Fq::from_limbs(
+            [0x764c9d3fe4bd5b70ab18201985ad7, 0x7f7681a02af2523a6daf372e10e3a, 0x1a51],
+        ),
+    ));
+    let sig_point = Ed25519::from((
+        Fq::from_limbs([0x324bd01ce6f3cf81ab44e62959c82a, 0xe309d40065fcc338b3127f46837182, 0x6218]),
+        Fq::from_limbs([0x826e80cce2869072ac60c3004356e5, 0x492265e073d874d9e5b81e7f87848a, 0x5501]),
+    ));
+    // S + p = 26892799607741188615518833504183115491795241622731540731030213950841464993888
+    let sig_s_bytes: [u8; 32] = [
+        96, 184, 130, 5, 36, 153, 29, 240, 87, 143, 242, 233, 100, 225, 232, 147, 47, 180, 118, 114,
+        16, 161, 14, 221, 142, 241, 114, 36, 1, 201, 116, 59,
+    ];
+
+    let message: BoundedVec<u8, 1> = BoundedVec::new();
+    assert(!ed25519_verify(pubkey, sig_s_bytes, sig_point, message));
+}
+
+#[test]
+// RFC 8032 7.1 TEST 1 with the encoding of S + 2p in place of S. Still the
+// same value mod p; 32 bytes can encode integers up to 2^256, more than 5p.
+fn test_rfc8032_test1_scalar_plus_two_bn254_moduli_rejected() {
+    let pubkey = Ed25519::from((
+        Fq::from_limbs([0x13d47253187c24b12786bd777645ce, 0xe09a2b9d34292297e08d60d0f620c5, 0x55d0]),
+        Fq::from_limbs(
+            [0x764c9d3fe4bd5b70ab18201985ad7, 0x7f7681a02af2523a6daf372e10e3a, 0x1a51],
+        ),
+    ));
+    let sig_point = Ed25519::from((
+        Fq::from_limbs([0x324bd01ce6f3cf81ab44e62959c82a, 0xe309d40065fcc338b3127f46837182, 0x6218]),
+        Fq::from_limbs([0x826e80cce2869072ac60c3004356e5, 0x492265e073d874d9e5b81e7f87848a, 0x5501]),
+    ));
+    // S + 2p = 48781042479580463837765239249440390580343606023147575074728418137417273489505
+    let sig_s_bytes: [u8; 32] = [
+        97, 184, 130, 245, 183, 142, 255, 51, 233, 255, 171, 99, 173, 201, 28, 188, 140, 12, 248,
+        243, 198, 230, 94, 149, 184, 145, 164, 5, 116, 23, 217, 107,
+    ];
+
+    let message: BoundedVec<u8, 1> = BoundedVec::new();
+    assert(!ed25519_verify(pubkey, sig_s_bytes, sig_point, message));
+}
+
+#[test]
+// Integer-exact boundaries of the S < L check. The byte vectors were computed
+// outside the circuit. Every value below L must be accepted, on both sides of
+// the 2^252 boundary between the comparison's 128-bit halves; L and above must
+// be rejected, in particular the BN254 modulus p, whose bytes decode to 0 mod p.
+fn test_decode_s_boundaries() {
+    // (little-endian bytes, the integer they encode)
+    let accepted: [([u8; 32], Field); 5] = [
+        ([0; 32], 0),
+        (
+            [
+                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0,
+            ], 1,
+        ),
+        // L - 1
+        (
+            [
+                236, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+            ], 7237005577332262213973186563042994240857116359379907606001950938285454250988,
+        ),
+        // 2^252 - 1: high half below L's high half
+        (
+            [
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 15,
+            ], 7237005577332262213973186563042994240829374041602535252466099000494570602495,
+        ),
+        // 2^252: high halves equal, low half 0 < L's low half
+        (
+            [
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 16,
+            ], 7237005577332262213973186563042994240829374041602535252466099000494570602496,
+        ),
+    ];
+    for case in accepted {
+        let (bytes, expected) = case;
+        let (value, in_range) = super::decode_s(bytes);
+        assert(in_range);
+        assert_eq(value, expected);
+    }
+
+    // L, L + 1, the BN254 modulus p, and 2^256 - 1
+    let rejected: [[u8; 32]; 4] = [
+        [
+            237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+        ],
+        [
+            238, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+        ],
+        [
+            1, 0, 0, 240, 147, 245, 225, 67, 145, 112, 185, 121, 72, 232, 51, 40, 93, 88, 129, 129,
+            182, 69, 80, 184, 41, 160, 49, 225, 114, 78, 100, 48,
+        ],
+        [
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+        ],
+    ];
+    for bytes in rejected {
+        let (_, in_range) = super::decode_s(bytes);
+        assert(!in_range);
+    }
+
+    // p's bytes decode to 0 mod p: the value a mod-p range check would accept.
+    let (p_value, _) = super::decode_s(rejected[2]);
+    assert_eq(p_value, 0);
+}
+
+#[test]
+// The top-byte shortcut in the S < L check: below 2^252 only the top byte
+// decides; at a top byte of 0x10 the rest of the high half must be zero and
+// the low half below L's; any larger top byte is rejected.
+fn test_decode_s_top_byte() {
+    let accepted: [([u8; 32], Field); 1] = [
+// 15 * 2^248: top byte 0x0f, rest zero
+    (
+        [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 15,
+        ], 6784692728748995825599862402852807100777538164002376799186967812963659939840,
+    )];
+    for case in accepted {
+        let (bytes, expected) = case;
+        let (value, in_range) = super::decode_s(bytes);
+        assert(in_range);
+        assert_eq(value, expected);
+    }
+
+    let rejected: [[u8; 32]; 4] = [
+        // 2^252 + 2^128: top byte 0x10, but hi above 2^124 while lo = 0 < L_LO
+        [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 16,
+        ],
+        // 2^252 + 2^128 - 1: hi = 2^124, lo = 2^128 - 1 >= L_LO
+        [
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+        ],
+        // 17 * 2^248: top byte 0x11
+        [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 17,
+        ],
+        // 2^255: top bit set
+        [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 128,
+        ],
+    ];
+    for bytes in rejected {
+        let (_, in_range) = super::decode_s(bytes);
+        assert(!in_range);
+    }
 }
