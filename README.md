@@ -7,7 +7,7 @@ Implementation of Ed25519 signature verification over variable length messages. 
 
 The implementation is compatible with the [IRTF RFC-8032](https://www.ietf.org/rfc/rfc8032.txt) instantiation of edDSA over Ed25519. Noir tests cover all test vectors from this specification. 
 
-Compatible with Noir 1.0.0-beta.20 and later
+Compatible with Noir 1.0.0 and later
 
 For example usage see `test.nr`
 
